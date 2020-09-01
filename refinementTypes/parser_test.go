@@ -38,7 +38,7 @@ func TestParse(t *testing.T) {
 		base := `func () (int, int) { return 1, 2 }`
 
 		baseExpr, _ := parser.ParseExpr(base)
-		info := types.Info{ Types: map[ast.Expr]types.TypeAndValue{}, }
+		info := types.Info{Types: map[ast.Expr]types.TypeAndValue{}}
 		_ = types.CheckExpr(token.NewFileSet(), nil, token.NoPos, baseExpr, &info)
 
 		baseType := info.Types[baseExpr].Type
@@ -61,7 +61,7 @@ func TestParse(t *testing.T) {
 		base := `func (x, y, z int) int { if x / y > y / z { return x / y } else { return y / z } }`
 
 		baseExpr, _ := parser.ParseExpr(base)
-		info := types.Info{ Types: map[ast.Expr]types.TypeAndValue{}, }
+		info := types.Info{Types: map[ast.Expr]types.TypeAndValue{}}
 		_ = types.CheckExpr(token.NewFileSet(), nil, token.NoPos, baseExpr, &info)
 
 		baseType := info.Types[baseExpr].Type

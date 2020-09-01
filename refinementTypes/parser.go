@@ -10,7 +10,7 @@ import (
 )
 
 type RefinementParser struct {
-	str string
+	str    string
 	offset int
 }
 
@@ -53,9 +53,6 @@ func parseParamList(s string, baseTuple *types.Tuple, allowSingleParamWithoutBra
 	if !allowSingleParamWithoutBrace && (!strings.HasPrefix(s, "(") || !strings.HasSuffix(s, ")")) {
 		return nil, errors.New("incorrect param list form")
 	}
-	// if allowSingleParamWithoutBrace && (!strings.HasPrefix(s, "{") || !strings.HasSuffix(s, "}")) {
-	// 	return nil, errors.New("incorrect param list form")
-	// }
 	body := strings.Trim(s, "() ")
 	paramStrs := strings.Split(body, ",")
 
@@ -132,7 +129,6 @@ func parseParam(s string, baseVar *types.Var) (*RefinedVar, error) {
 	}, nil
 }
 
-
 // parseRefinementType parses refinement type in form "{" var ":" type "|" predicate "}"
 func parseRefinementType(s string, baseType types.Type) (*RefinedType, error) {
 	if !strings.HasPrefix(s, "{") || !strings.HasSuffix(s, "}") {
@@ -165,7 +161,6 @@ func parseRefinementType(s string, baseType types.Type) (*RefinedType, error) {
 		return nil, fmt.Errorf("base type %s is incositent inconsistent with types in go", parsedBaseTypeStr)
 	}
 
-
 	predicate, err := parser.ParseExpr(predicateStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse refinement preficate: %v", predicateStr)
@@ -176,6 +171,6 @@ func parseRefinementType(s string, baseType types.Type) (*RefinedType, error) {
 			Predicate: predicate,
 			RefVar:    refinementIdent,
 		},
-		BaseType:  baseType,
+		Type: baseType,
 	}, nil
 }

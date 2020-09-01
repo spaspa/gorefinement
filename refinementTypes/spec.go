@@ -7,44 +7,14 @@ import (
 	"strings"
 )
 
-type Refinement struct {
-	Predicate ast.Expr
-	RefVar    *ast.Ident
-}
-
 type RefinedType struct {
 	Refinement
-	BaseType  types.Type
+	types.Type
 }
 
 func (r *RefinedType) Underlying() types.Type { return r }
 func (r *RefinedType) String() string {
-	return fmt.Sprintf("{ %s: %s | %s }", r.RefVar.Name, r.BaseType, types.ExprString(r.Predicate))
-}
-
-type RefinedVar struct {
-	// TODO
-	name        string
-	refinedType *RefinedType
-}
-
-type RefinedTuple struct {
-	vars []*RefinedVar
-}
-func NewRefinedTuple(x ...*RefinedVar) *RefinedTuple {
-	if len(x) > 0 {
-		return &RefinedTuple{x}
-	}
-	return nil
-}
-func (t *RefinedTuple) Len() int {
-	if t != nil {
-		return len(t.vars)
-	}
-	return 0
-}
-func (t *RefinedTuple) At(i int) *RefinedVar {
-	return t.vars[i]
+	return fmt.Sprintf("{ %s: %s | %s }", r.RefVar.Name, r.Type, types.ExprString(r.Predicate))
 }
 
 type DependentSignature struct {
@@ -52,6 +22,7 @@ type DependentSignature struct {
 	ParamRefinements   *RefinedTuple
 	ResultsRefinements *RefinedTuple
 }
+
 func NewDependentSignature(sig *types.Signature, params, results *RefinedTuple) *DependentSignature {
 	return &DependentSignature{
 		sig,
@@ -59,7 +30,6 @@ func NewDependentSignature(sig *types.Signature, params, results *RefinedTuple) 
 		results,
 	}
 }
-
 func (s *DependentSignature) Underlying() types.Type { return s }
 func (s *DependentSignature) String() string {
 	var paramStr []string
@@ -83,4 +53,35 @@ func (s *DependentSignature) String() string {
 	} else {
 		return fmt.Sprintf("(%s) -> (%s)", strings.Join(paramStr, ", "), strings.Join(resultStr, ", "))
 	}
+}
+
+type Refinement struct {
+	Predicate ast.Expr
+	RefVar    *ast.Ident
+}
+
+type RefinedVar struct {
+	// TODO
+	name        string
+	refinedType *RefinedType
+}
+
+type RefinedTuple struct {
+	vars []*RefinedVar
+}
+
+func NewRefinedTuple(x ...*RefinedVar) *RefinedTuple {
+	if len(x) > 0 {
+		return &RefinedTuple{x}
+	}
+	return nil
+}
+func (t *RefinedTuple) Len() int {
+	if t != nil {
+		return len(t.vars)
+	}
+	return 0
+}
+func (t *RefinedTuple) At(i int) *RefinedVar {
+	return t.vars[i]
 }

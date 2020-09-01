@@ -1,9 +1,8 @@
 package main
 
 import (
-	"poyo_analyser/gorefinement"
 	"golang.org/x/tools/go/analysis/unitchecker"
+	"poyo_analyser/gorefinement"
 )
 
 func main() { unitchecker.Main(gorefinement.Analyzer) }
-
