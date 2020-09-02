@@ -1,4 +1,4 @@
-package refinementTypes
+package refinement
 
 import (
 	"fmt"

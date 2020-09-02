@@ -1,4 +1,4 @@
-package refinementTypes
+package refinement
 
 import (
 	"errors"
@@ -9,18 +9,22 @@ import (
 	"strings"
 )
 
-type RefinementParser struct {
-	str    string
-	offset int
+func ParseWithBaseType(s string, baseType types.Type) (identName string, resultType types.Type, err error) {
+	return parse(s, baseType, ":")
 }
 
-func ParseWithBaseType(s string, baseType types.Type) (types.Type, error) {
-	decl := strings.SplitN(s, ":", 2)
+func ParseAliasWithBaseType(s string, baseType types.Type) (identName string, resultType types.Type, err error) {
+	return parse(s, baseType, "=")
+}
+
+func parse(s string, baseType types.Type, sep string) (string, types.Type, error) {
+	decl := strings.SplitN(s, sep, 2)
 
 	if len(decl) != 2 {
-		return nil, errors.New("failed to parse declaration")
+		return "", nil, errors.New("failed to parse declaration")
 	}
-	return parseType(strings.Trim(decl[1], " "), baseType)
+	resultType, err := parseType(strings.Trim(decl[1], " "), baseType)
+	return decl[0], resultType, err
 }
 
 func parseType(s string, baseType types.Type) (types.Type, error) {
