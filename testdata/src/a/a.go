@@ -1,20 +1,30 @@
 package a
 
 func main() {
-	// maxDiv: (x int, y, z { v: int | v > 0 }) -> { r: int | r > x / y && r > y / z }
-	maxDiv := func(x, y, z int) int {
+	// a: { x: int | x >= 0 }
+	a := 3
+
+	// maxDiv: (x { x: int | true }, y, z { v: int | v > 0 }) -> { r: int | r > x / y && r > y / z }
+	maxDiv := func(x int, y, z nat) int {
 		if x/y > y/z {
 			return x / y
 		} else {
 			return y / z
 		}
 	}
-
-	maxDiv(5, 1, 2)
-	maxDiv(6, 6, 0) // want "UNSAFE"
+	if true {
+		oneTwoDiv(a)
+		oneTwoDiv(0)	// want "UNSAFE"
+	} else {
+		maxDiv(5, 1, 2)
+		maxDiv(6, 6, 0)	// want "UNSAFE"
+	}
 }
 
-// oneTwo: () -> ({ r: int | r == 1 }, { r: int | r == 2 })
-func oneTwo() (int, int) {
-	return 1, 2
+// oneTwoDiv: (x { v: int | v != 0 }) -> ({ r: int | r == 1 }, { r: int | r == 2 / x })
+func oneTwoDiv(x nat) (int, int) {
+	return 1, 2 / x
 }
+
+// type nat = { x: int | x >= 0 }
+type nat =  int
