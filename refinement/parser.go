@@ -129,7 +129,7 @@ func parseParam(s string, baseVar *types.Var) (*RefinedVar, error) {
 
 	return &RefinedVar{
 		name:        resultName,
-		refinedType: resultType,
+		RefinedType: resultType,
 	}, nil
 }
 
@@ -171,7 +171,7 @@ func parseRefinementType(s string, baseType types.Type) (*RefinedType, error) {
 	}
 
 	return &RefinedType{
-		Refinement: Refinement{
+		Refinement: &Refinement{
 			Predicate: predicate,
 			RefVar:    refinementIdent,
 		},

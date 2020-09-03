@@ -4,7 +4,7 @@ func main() {
 	// a: { x: int | x >= 0 }
 	a := 3
 
-	// maxDiv: (x { x: int | true }, y, z { v: int | v > 0 }) -> { r: int | r > x / y && r > y / z }
+	// maxDiv: (x { x: int | true }, y {v: int |v > 0 } , z { v: int | v > 0 }) -> { r: int | r > x / y && r > y / z }
 	maxDiv := func(x int, y, z nat) int {
 		if x/y > y/z {
 			return x / y
@@ -24,6 +24,14 @@ func main() {
 // oneTwoDiv: (x { v: int | v != 0 }) -> ({ r: int | r == 1 }, { r: int | r == 2 / x })
 func oneTwoDiv(x nat) (int, int) {
 	return 1, 2 / x
+}
+
+func po() {
+	if true {
+		println("a")
+	} else {
+		oneTwoDiv(0) // unsafe
+	}
 }
 
 // type nat = { x: int | x >= 0 }

@@ -8,7 +8,7 @@ import (
 )
 
 type RefinedType struct {
-	Refinement
+	*Refinement
 	types.Type
 }
 
@@ -37,14 +37,14 @@ func (s *DependentSignature) String() string {
 
 	for i := 0; i < s.ParamRefinements.Len(); i++ {
 		param := s.ParamRefinements.At(i)
-		paramStr = append(paramStr, fmt.Sprintf("%s: %s", param.name, param.refinedType))
+		paramStr = append(paramStr, fmt.Sprintf("%s: %s", param.name, param.RefinedType))
 	}
 	for i := 0; i < s.ResultsRefinements.Len(); i++ {
 		result := s.ResultsRefinements.At(i)
 		if result.name == "" {
-			resultStr = append(resultStr, fmt.Sprintf("%s", result.refinedType))
+			resultStr = append(resultStr, fmt.Sprintf("%s", result.RefinedType))
 		} else {
-			resultStr = append(resultStr, fmt.Sprintf("%s: %s", result.name, result.refinedType))
+			resultStr = append(resultStr, fmt.Sprintf("%s: %s", result.name, result.RefinedType))
 		}
 	}
 
@@ -60,10 +60,14 @@ type Refinement struct {
 	RefVar    *ast.Ident
 }
 
+func (r *Refinement) String() string {
+	return fmt.Sprintf("{ %s: ? | %s }", r.RefVar.Name, types.ExprString(r.Predicate))
+}
+
 type RefinedVar struct {
 	// TODO
 	name        string
-	refinedType *RefinedType
+	RefinedType *RefinedType
 }
 
 type RefinedTuple struct {
