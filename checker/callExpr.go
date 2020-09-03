@@ -1,10 +1,11 @@
 package checker
 
 import (
-	"github.com/spaspa/gorefinement/liquid"
-	"github.com/spaspa/gorefinement/refinement"
 	"go/ast"
 	"go/types"
+
+	"github.com/spaspa/gorefinement/liquid"
+	"github.com/spaspa/gorefinement/refinement"
 	"golang.org/x/tools/go/analysis"
 )
 

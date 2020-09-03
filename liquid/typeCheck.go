@@ -1,11 +1,12 @@
 package liquid
 
 import (
-	"github.com/spaspa/gorefinement/freshname"
-	"github.com/spaspa/gorefinement/refinement"
 	"go/ast"
 	"go/token"
 	"go/types"
+
+	"github.com/spaspa/gorefinement/freshname"
+	"github.com/spaspa/gorefinement/refinement"
 )
 
 func TypeCheckExpr(env *Environment, expr ast.Expr) types.Type {

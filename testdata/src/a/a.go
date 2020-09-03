@@ -9,16 +9,16 @@ func main() {
 
 	c := 1
 
-	a = 0      // ok
-	a = -1     // want "UNSAFE"
-	b = 1      // want "UNSAFE"
+	a = 0  // ok
+	a = -1 // want "UNSAFE"
+	b = 1  // want "UNSAFE"
 
-	a = b      // want "UNSAFE"
-	a = -b     // ok
-	a = b * b  // ok
-	a = a * b  // want "UNSAFE"
+	a = b     // want "UNSAFE"
+	a = -b    // ok
+	a = b * b // ok
+	a = a * b // want "UNSAFE"
 
-	a = c      // want "UNSAFE"
+	a = c // want "UNSAFE"
 
 	println(a)
 }

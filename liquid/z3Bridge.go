@@ -2,11 +2,12 @@ package liquid
 
 import (
 	"fmt"
-	"github.com/mitchellh/go-z3"
 	"go/ast"
 	"go/token"
 	"go/types"
 	"strconv"
+
+	"github.com/mitchellh/go-z3"
 )
 
 func ConvertToZ3Ast(env *Environment, ctx *z3.Context, expr ast.Expr) (*z3.AST, error) {
@@ -35,7 +36,7 @@ func convertIdent(env *Environment, ctx *z3.Context, expr *ast.Ident) (*z3.AST, 
 		return nil, fmt.Errorf("failed to convert expr to z3 ast: ident not found")
 	}
 	if basicType, ok := obj.Type().(*types.Basic); ok {
-		if basicType.Info() & types.IsInteger != 0 {
+		if basicType.Info()&types.IsInteger != 0 {
 			return ctx.Const(ctx.Symbol(expr.Name), ctx.IntSort()), nil
 		}
 	}

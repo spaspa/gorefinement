@@ -1,10 +1,11 @@
 package liquid
 
 import (
-	"github.com/go-toolsmith/astcopy"
-	"github.com/spaspa/gorefinement/refinement"
 	"go/ast"
 	"go/token"
+
+	"github.com/go-toolsmith/astcopy"
+	"github.com/spaspa/gorefinement/refinement"
 	"golang.org/x/tools/go/ast/astutil"
 )
 

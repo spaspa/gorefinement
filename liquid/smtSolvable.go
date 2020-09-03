@@ -2,9 +2,10 @@ package liquid
 
 import (
 	"fmt"
-	"github.com/mitchellh/go-z3"
 	"go/token"
 	"log"
+
+	"github.com/mitchellh/go-z3"
 
 	"go/ast"
 )

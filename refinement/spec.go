@@ -2,12 +2,13 @@ package refinement
 
 import (
 	"fmt"
-	"github.com/spaspa/gorefinement/freshname"
 	"go/ast"
 	"go/constant"
 	"go/parser"
 	"go/types"
 	"strings"
+
+	"github.com/spaspa/gorefinement/freshname"
 )
 
 var truePredicate, _ = parser.ParseExpr("true")

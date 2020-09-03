@@ -1,11 +1,12 @@
 package liquid
 
 import (
-	"github.com/go-toolsmith/astcopy"
-	"github.com/spaspa/gorefinement/refinement"
 	"go/ast"
 	"go/token"
 	"go/types"
+
+	"github.com/go-toolsmith/astcopy"
+	"github.com/spaspa/gorefinement/refinement"
 	"golang.org/x/tools/go/analysis"
 )
 
@@ -74,4 +75,3 @@ func (env *Environment) Embedding() ast.Expr {
 
 	return joinExpr(token.LAND, result...)
 }
-

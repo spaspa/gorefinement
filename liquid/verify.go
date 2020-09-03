@@ -2,8 +2,9 @@ package liquid
 
 import (
 	"fmt"
-	"github.com/spaspa/gorefinement/refinement"
 	"go/types"
+
+	"github.com/spaspa/gorefinement/refinement"
 )
 
 // IsSubType checks t1 <: t2 or not.

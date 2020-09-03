@@ -2,14 +2,15 @@ package gorefinement
 
 import (
 	"fmt"
+	"go/ast"
+	"go/token"
+	"strings"
+
 	"github.com/gostaticanalysis/comment"
 	"github.com/spaspa/gorefinement/checker"
 	"github.com/spaspa/gorefinement/liquid"
 	"github.com/spaspa/gorefinement/refinement"
-	"go/ast"
-	"go/token"
 	"golang.org/x/tools/go/analysis/passes/buildssa"
-	"strings"
 
 	"github.com/gostaticanalysis/comment/passes/commentmap"
 	"golang.org/x/tools/go/analysis"
