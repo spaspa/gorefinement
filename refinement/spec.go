@@ -2,6 +2,7 @@ package refinement
 
 import (
 	"fmt"
+	"github.com/spaspa/gorefinement/freshname"
 	"go/ast"
 	"go/constant"
 	"go/parser"
@@ -19,11 +20,12 @@ type RefinedType struct {
 
 // NewRefinedTypeFromValue returns narrowest type of given value.
 func NewRefinedTypeFromValue(v constant.Value) (*RefinedType, error) {
-	predicate, err := parser.ParseExpr(fmt.Sprintf("__val == %v", v.ExactString()))
+	name := freshname.Generate()
+	predicate, err := parser.ParseExpr(fmt.Sprintf("%s == %v", name, v.ExactString()))
 	if err != nil {
 		return nil, err
 	}
-	ident := ast.NewIdent("__val")
+	ident := ast.NewIdent(name)
 	return &RefinedType{
 		Refinement: &Refinement{
 			Predicate: predicate,
@@ -103,10 +105,6 @@ func (s *DependentSignature) String() string {
 type Refinement struct {
 	Predicate ast.Expr
 	RefVar    *ast.Ident
-}
-
-func (r *Refinement) String() string {
-	return fmt.Sprintf("{ %s: ? | %s }", r.RefVar.Name, types.ExprString(r.Predicate))
 }
 
 type RefinedVar struct {

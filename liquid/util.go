@@ -1,12 +1,14 @@
 package liquid
 
 import (
+	"github.com/go-toolsmith/astcopy"
+	"github.com/spaspa/gorefinement/refinement"
 	"go/ast"
 	"go/token"
 	"golang.org/x/tools/go/ast/astutil"
 )
 
-func ReplaceIdentOf(n ast.Node, name string, to ast.Node) ast.Node {
+func replaceIdentOf(n ast.Node, name string, to ast.Node) ast.Node {
 	return astutil.Apply(n, func(cursor *astutil.Cursor) bool {
 		current := cursor.Node()
 		if ident, ok := current.(*ast.Ident); ok && ident.Name == name {
@@ -16,7 +18,7 @@ func ReplaceIdentOf(n ast.Node, name string, to ast.Node) ast.Node {
 	}, nil)
 }
 
-func JoinExpr(es []ast.Expr, sep token.Token) ast.Expr {
+func joinExpr(sep token.Token, es ...ast.Expr) ast.Expr {
 	if len(es) == 0 {
 		return nil
 	}
@@ -32,4 +34,9 @@ func JoinExpr(es []ast.Expr, sep token.Token) ast.Expr {
 	}
 
 	return result
+}
+
+func normalizedPredicateOf(r *refinement.RefinedType) ast.Expr {
+	newPred := astcopy.Expr(r.Predicate)
+	return replaceIdentOf(newPred, r.RefVar.Name, ast.NewIdent(predicateVariableName)).(ast.Expr)
 }

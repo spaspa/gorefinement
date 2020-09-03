@@ -22,6 +22,7 @@ func CheckAssignStmt(pass *analysis.Pass, env *liquid.Environment, assignStmt *a
 	}
 	rhs := assignStmt.Rhs[0]
 
+	env.Pos = assignStmt.Pos()
 	env.Scope = pass.Pkg.Scope().Innermost(assignStmt.Pos())
 
 	lhsType := liquid.TypeCheckExpr(env, lhs)

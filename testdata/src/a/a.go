@@ -4,12 +4,15 @@ func main() {
 	// a: { x: int | x >= 0 }
 	a := 3
 
-	// b: { x: int | x <= -100 }
+	// b: { y: int | y <= -100 }
 	b := -200
 
-	a = b*2 + 2
-	a = b + 200
-	a = 1 + 200
+	a = 0
+	a = -1 // want "UNSAFE"
+
+	b = 1 // want "UNSAFE"
+
+	a = b // want "UNSAFE"
 
 	println(a)
 }
