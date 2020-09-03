@@ -6,7 +6,6 @@ import (
 	"go/types"
 )
 
-
 // IsSubType checks t1 <: t2 or not.
 func IsSubtype(e *Environment, t1, t2 types.Type) bool {
 	switch t1 := t1.(type) {
@@ -24,7 +23,6 @@ func IsSubtype(e *Environment, t1, t2 types.Type) bool {
 func isSubTypeOfRefinedType(e *Environment, t1 *refinement.RefinedType, t2 types.Type) bool {
 	switch t2 := t2.(type) {
 	case *refinement.RefinedType:
-		// TODO specify env
 		return verify(e, t1, t2)
 	case *refinement.DependentSignature:
 		panic("not supported")
@@ -38,8 +36,7 @@ func isSubTypeOfRefinedType(e *Environment, t1 *refinement.RefinedType, t2 types
 func isSubTypeOfNonRefinedType(e *Environment, t1, t2 types.Type) bool {
 	switch t2 := t2.(type) {
 	case *refinement.RefinedType:
-		// TODO specify env
-		return types.Identical(t1, t2.Type) && verify(e, nil, t2)
+		return types.Identical(t1, t2.Type) && verify(e, refinement.NewRefinedTypeWithTruePredicate(t1), t2)
 	case *refinement.DependentSignature:
 		panic("not supported")
 	default:
@@ -50,7 +47,7 @@ func isSubTypeOfNonRefinedType(e *Environment, t1, t2 types.Type) bool {
 // verify checks implication ⟦e⟧ ∧ ⟦r1⟧ ⇒ ⟦r2⟧ is valid or not.
 func verify(e *Environment, r1, r2 *refinement.RefinedType) bool {
 	// TODO implement
-	// fmt.Println(e)
+	fmt.Println(types.ExprString(e.Embedding()))
 	fmt.Println(r1)
 	fmt.Println(r2)
 	fmt.Println("-----")

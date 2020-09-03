@@ -1,26 +1,35 @@
 package liquid
 
 import (
-	"fmt"
-	"github.com/spaspa/gorefinement/refinement"
 	"go/ast"
-	"go/constant"
-	"go/parser"
-	"go/types"
+	"go/token"
+	"golang.org/x/tools/go/ast/astutil"
 )
 
-// RefinedTypeFromValue returns narrowest type of given value.
-func RefinedTypeFromValue(v constant.Value) (*refinement.RefinedType, error) {
-	predicate, err := parser.ParseExpr(fmt.Sprintf("__val == %v", v.ExactString()))
-	if err != nil {
-		return nil, err
+func ReplaceIdentOf(n ast.Node, name string, to ast.Node) ast.Node {
+	return astutil.Apply(n, func(cursor *astutil.Cursor) bool {
+		current := cursor.Node()
+		if ident, ok := current.(*ast.Ident); ok && ident.Name == name {
+			cursor.Replace(to)
+		}
+		return true
+	}, nil)
+}
+
+func JoinExpr(es []ast.Expr, sep token.Token) ast.Expr {
+	if len(es) == 0 {
+		return nil
 	}
-	ident := ast.NewIdent("__val")
-	return &refinement.RefinedType{
-		Refinement: &refinement.Refinement{
-			Predicate: predicate,
-			RefVar:    ident,
-		},
-		Type:       types.Typ[types.UntypedInt],
-	}, nil
+
+	var result = es[0]
+	for i := 1; i < len(es); i++ {
+		result = &ast.BinaryExpr{
+			X:     result,
+			OpPos: token.NoPos,
+			Op:    sep,
+			Y:     es[i],
+		}
+	}
+
+	return result
 }

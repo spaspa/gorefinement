@@ -3,11 +3,11 @@ package gorefinement
 import (
 	"fmt"
 	"github.com/gostaticanalysis/comment"
+	"github.com/spaspa/gorefinement/checker"
 	"github.com/spaspa/gorefinement/liquid"
 	"github.com/spaspa/gorefinement/refinement"
 	"go/ast"
 	"go/token"
-	"go/types"
 	"golang.org/x/tools/go/analysis/passes/buildssa"
 	"strings"
 
@@ -35,7 +35,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	cmap := pass.ResultOf[commentmap.Analyzer].(comment.Maps)
 
-	env := liquid.NewEnvironment()
+	env := liquid.NewEnvironment(pass)
 
 	// TODO: extract type alias
 
@@ -95,52 +95,16 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		}
 	})
 
-	inspect.Preorder([]ast.Node{(*ast.CallExpr)(nil)}, func(n ast.Node) {
-		callExpr := n.(*ast.CallExpr)
-		funIdent, ok := callExpr.Fun.(*ast.Ident)
-		if !ok {
-			return
-		}
-		funObj := pass.TypesInfo.ObjectOf(funIdent)
-		if funObj == nil {
-			return
-		}
-		funDepSig, _ := env.RefinementTypeOf(funObj).(*refinement.DependentSignature)
-		if funDepSig == nil {
-			return
-		}
-		for i, arg := range callExpr.Args {
-			var checkType types.Type
-			switch arg := arg.(type) {
-			case *ast.Ident:
-				argObj := pass.TypesInfo.ObjectOf(arg)
-				argRefType := env.RefinementTypeOf(argObj)
-				if argRefType != nil {
-					checkType = argRefType
-				} else {
-					checkType = pass.TypesInfo.TypeOf(arg)
-				}
-			default:
-				argTypeAndValue := pass.TypesInfo.Types[arg]
-				typ := argTypeAndValue.Type
-				val := argTypeAndValue.Value
-				if val != nil {
-					if r, err := liquid.RefinedTypeFromValue(val); err == nil {
-						typ = r
-					}
-				}
-				checkType = typ
-			}
-			result := liquid.IsSubtype(env, checkType, funDepSig.ParamRefinements.At(i).RefinedType)
-			if !result {
-				pass.Reportf(callExpr.Pos(), "UNSAFE")
-			}
+	inspect.Preorder([]ast.Node{(*ast.CallExpr)(nil), (*ast.AssignStmt)(nil)}, func(n ast.Node) {
+		switch n := n.(type) {
+		case *ast.CallExpr:
+			checker.CheckCallExpr(pass, env, n)
+		case *ast.AssignStmt:
+			checker.CheckAssignStmt(pass, env, n)
 		}
 	})
 
 	fmt.Println(env.ExplicitRefinementMap)
-
-
 
 	return nil, nil
 }
