@@ -12,11 +12,14 @@ import (
 func TestParse(t *testing.T) {
 	t.Run("can parse simple refinement type declaration", func(t *testing.T) {
 		sig := "a: { x: int | x > 0|| x== 1 }"
-		typ, err := ParseWithBaseType(sig, types.Typ[types.Int])
+		identStr, typ, err := ParseWithBaseType(sig, types.Typ[types.Int])
 		if err != nil {
 			t.Errorf("could not parse correct refinement: %v", sig)
 			t.Errorf("%s", err)
 			return
+		}
+		if identStr != "a" {
+			t.Errorf("invalid ident string: %v", identStr)
 		}
 		refined, ok := typ.(*RefinedType)
 		if !ok {
@@ -42,11 +45,14 @@ func TestParse(t *testing.T) {
 		_ = types.CheckExpr(token.NewFileSet(), nil, token.NoPos, baseExpr, &info)
 
 		baseType := info.Types[baseExpr].Type
-		typ, err := ParseWithBaseType(sig, baseType)
+		identStr, typ, err := ParseWithBaseType(sig, baseType)
 		if err != nil {
 			t.Errorf("could not parse correct refinement: %v", sig)
 			t.Errorf("%s", err)
 			return
+		}
+		if identStr != "oneTwo" {
+			t.Errorf("invalid ident string: %v", identStr)
 		}
 		dependent, ok := typ.(*DependentSignature)
 		if !ok {
@@ -65,11 +71,14 @@ func TestParse(t *testing.T) {
 		_ = types.CheckExpr(token.NewFileSet(), nil, token.NoPos, baseExpr, &info)
 
 		baseType := info.Types[baseExpr].Type
-		typ, err := ParseWithBaseType(sig, baseType)
+		identStr, typ, err := ParseWithBaseType(sig, baseType)
 		if err != nil {
 			t.Errorf("could not parse correct refinement: %v", sig)
 			t.Errorf("%s", err)
 			return
+		}
+		if identStr != "maxDiv" {
+			t.Errorf("invalid ident string: %v", identStr)
 		}
 		dependent, ok := typ.(*DependentSignature)
 		if !ok {
