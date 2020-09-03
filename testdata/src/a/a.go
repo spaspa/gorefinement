@@ -7,12 +7,18 @@ func main() {
 	// b: { y: int | y <= -100 }
 	b := -200
 
-	a = 0
-	a = -1 // want "UNSAFE"
+	c := 1
 
-	b = 1 // want "UNSAFE"
+	a = 0      // ok
+	a = -1     // want "UNSAFE"
+	b = 1      // want "UNSAFE"
 
-	a = b // want "UNSAFE"
+	a = b      // want "UNSAFE"
+	a = -b     // ok
+	a = b * b  // ok
+	a = a * b  // want "UNSAFE"
+
+	a = c      // want "UNSAFE"
 
 	println(a)
 }
