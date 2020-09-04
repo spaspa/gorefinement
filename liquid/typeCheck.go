@@ -10,7 +10,7 @@ import (
 )
 
 func TypeCheckExpr(env *Environment, expr ast.Expr) types.Type {
-	typeAndValue := env.pass.TypesInfo.Types[expr]
+	typeAndValue := env.Pass.TypesInfo.Types[expr]
 	if typeAndValue.Value != nil {
 		if typ, err := refinement.NewRefinedTypeFromValue(typeAndValue.Value); err == nil {
 			return typ
@@ -26,27 +26,27 @@ func TypeCheckExpr(env *Environment, expr ast.Expr) types.Type {
 	case *ast.UnaryExpr:
 		return checkOpExpr(env, expr)
 	default:
-		return env.pass.TypesInfo.TypeOf(expr)
+		return env.Pass.TypesInfo.TypeOf(expr)
 	}
 }
 
 func checkIdent(env *Environment, expr *ast.Ident) types.Type {
-	obj := env.pass.TypesInfo.ObjectOf(expr)
+	obj := env.Pass.TypesInfo.ObjectOf(expr)
 	if refType := env.RefinementTypeOf(obj); refType != nil {
 		return refType
 	} else {
-		return env.pass.TypesInfo.TypeOf(expr)
+		return env.Pass.TypesInfo.TypeOf(expr)
 	}
 }
 
 func checkCallExpr(env *Environment, expr *ast.CallExpr) types.Type {
 	switch fun := expr.Fun.(type) {
 	case *ast.Ident:
-		obj := env.pass.TypesInfo.ObjectOf(fun)
+		obj := env.Pass.TypesInfo.ObjectOf(fun)
 		sig := env.RefinementTypeOf(obj).(*refinement.DependentSignature)
 		return sig.ResultsRefinements
 	default:
-		return env.pass.TypesInfo.TypeOf(expr)
+		return env.Pass.TypesInfo.TypeOf(expr)
 	}
 }
 
@@ -62,7 +62,7 @@ func checkOpExpr(env *Environment, expr ast.Expr) types.Type {
 			},
 			RefVar: ident,
 		},
-		Type: env.pass.TypesInfo.TypeOf(expr),
+		Type: env.Pass.TypesInfo.TypeOf(expr),
 	}
 }
 
@@ -70,14 +70,14 @@ func checkBinaryExpr(env *Environment, expr *ast.BinaryExpr) types.Type {
 	ty1 := TypeCheckExpr(env, expr.X)
 	ty2 := TypeCheckExpr(env, expr.Y)
 	if ty1 == nil || ty2 == nil {
-		return env.pass.TypesInfo.TypeOf(expr)
+		return env.Pass.TypesInfo.TypeOf(expr)
 	}
 
 	refType1, _ := ty1.(*refinement.RefinedType)
 	refType2, _ := ty2.(*refinement.RefinedType)
 
 	if refType1 == nil || refType2 == nil {
-		return env.pass.TypesInfo.TypeOf(expr)
+		return env.Pass.TypesInfo.TypeOf(expr)
 	}
 
 	if refType1.IsConstant() {
@@ -116,7 +116,7 @@ func checkBinaryExpr(env *Environment, expr *ast.BinaryExpr) types.Type {
 	} else if types.AssignableTo(refType2.Type, refType1.Type) {
 		baseType = refType2.Type
 	} else {
-		return env.pass.TypesInfo.TypeOf(expr)
+		return env.Pass.TypesInfo.TypeOf(expr)
 	}
 
 	return &refinement.RefinedType{
@@ -137,13 +137,13 @@ func checkBinaryExpr(env *Environment, expr *ast.BinaryExpr) types.Type {
 func checkUnaryExpr(env *Environment, expr *ast.UnaryExpr) types.Type {
 	ty1 := TypeCheckExpr(env, expr.X)
 	if ty1 == nil {
-		return env.pass.TypesInfo.TypeOf(expr)
+		return env.Pass.TypesInfo.TypeOf(expr)
 	}
 
 	refType1, _ := ty1.(*refinement.RefinedType)
 
 	if refType1 == nil {
-		return env.pass.TypesInfo.TypeOf(expr)
+		return env.Pass.TypesInfo.TypeOf(expr)
 	}
 
 	return &refinement.RefinedType{

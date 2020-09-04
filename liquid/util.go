@@ -19,7 +19,7 @@ func replaceIdentOf(n ast.Node, name string, to ast.Node) ast.Node {
 	}, nil)
 }
 
-func joinExpr(sep token.Token, es ...ast.Expr) ast.Expr {
+func JoinExpr(sep token.Token, es ...ast.Expr) ast.Expr {
 	if len(es) == 0 {
 		return nil
 	}
@@ -39,5 +39,5 @@ func joinExpr(sep token.Token, es ...ast.Expr) ast.Expr {
 
 func normalizedPredicateOf(r *refinement.RefinedType) ast.Expr {
 	newPred := astcopy.Expr(r.Predicate)
-	return replaceIdentOf(newPred, r.RefVar.Name, ast.NewIdent(predicateVariableName)).(ast.Expr)
+	return replaceIdentOf(newPred, r.RefVar.Name, ast.NewIdent(PredicateVariableName)).(ast.Expr)
 }
