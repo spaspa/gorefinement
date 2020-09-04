@@ -28,6 +28,3 @@ Download pre-built binaries from [Z3 repository releases page](https://github.co
 then place header and library files to appropriate path.
 
 If you are using macOS, install from [HomeBrew](https://formulae.brew.sh/formula/z3) is recommended.
-
-## limitation
-- 
