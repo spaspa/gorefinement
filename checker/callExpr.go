@@ -14,47 +14,25 @@ func CheckCallExpr(pass *analysis.Pass, env *liquid.Environment, callExpr *ast.C
 	if !ok {
 		return
 	}
-	funObj := pass.TypesInfo.ObjectOf(funIdent)
-	if funObj == nil {
-		return
-	}
-	funDepSig, _ := env.RefinementTypeOf(funObj).(*refinement.DependentSignature)
-	if funDepSig == nil {
+	funDepSig, ok := liquid.TypeCheckExpr(env, funIdent).(*refinement.DependentSignature)
+	if !ok {
 		return
 	}
 
+	env.Pos = callExpr.Pos()
 	env.Scope = pass.Pkg.Scope().Innermost(callExpr.Pos())
 
 	for i, arg := range callExpr.Args {
-		var checkType types.Type
-		switch arg := arg.(type) {
-		case *ast.Ident:
-			argObj := pass.TypesInfo.ObjectOf(arg)
-			argRefType := env.RefinementTypeOf(argObj)
-			if argRefType != nil {
-				checkType = argRefType
-			} else {
-				checkType = pass.TypesInfo.TypeOf(arg)
-			}
-		default:
-			argTypeAndValue := pass.TypesInfo.Types[arg]
-			typ := liquid.TypeCheckExpr(env, arg)
-			if typ == nil {
-				typ = argTypeAndValue.Type
-			}
+		typ := liquid.TypeCheckExpr(env, arg)
 
-			val := argTypeAndValue.Value
-			if val != nil {
-				if r, err := refinement.NewRefinedTypeFromValue(val); err == nil {
-					typ = r
-				}
-			}
+		argVar := funDepSig.ParamRefinements.At(i)
 
-			checkType = typ
-		}
-		result := liquid.IsSubtype(env, checkType, funDepSig.ParamRefinements.At(i).RefinedType)
+		result := liquid.IsSubtype(env, typ, funDepSig.ParamRefinements.At(i).RefinedType)
 		if !result {
 			pass.Reportf(callExpr.Pos(), "UNSAFE")
 		}
+
+		env.FunArgRefinementMap[argVar.Name] = typ
 	}
+	env.FunArgRefinementMap = map[string]types.Type{}
 }

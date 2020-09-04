@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"reflect"
 	"strconv"
 
 	"github.com/mitchellh/go-z3"
@@ -20,8 +21,10 @@ func ConvertToZ3Ast(env *Environment, ctx *z3.Context, expr ast.Expr) (*z3.AST, 
 		return convertIdent(env, ctx, expr)
 	case *ast.BasicLit:
 		return convertBasicLit(env, ctx, expr)
+	case nil:
+		return nil, fmt.Errorf("failed to convert expr to z3 ast: found nil expr")
 	default:
-		return nil, fmt.Errorf("failed to convert expr to z3 ast: unsupported expr")
+		return nil, fmt.Errorf("failed to convert expr to z3 ast: %s is unsupported", reflect.ValueOf(expr))
 	}
 }
 
@@ -33,7 +36,7 @@ func convertIdent(env *Environment, ctx *z3.Context, expr *ast.Ident) (*z3.AST, 
 	}
 	_, obj := env.Scope.LookupParent(expr.Name, env.Pos)
 	if obj == nil || obj.Type() == nil {
-		return nil, fmt.Errorf("failed to convert expr to z3 ast: ident not found")
+		return lookupFunArgIdent(env, ctx, expr.Name)
 	}
 	if basicType, ok := obj.Type().(*types.Basic); ok {
 		if basicType.Info()&types.IsInteger != 0 {
@@ -41,6 +44,14 @@ func convertIdent(env *Environment, ctx *z3.Context, expr *ast.Ident) (*z3.AST, 
 		}
 	}
 	return nil, fmt.Errorf("failed to convert expr to z3 ast: ident is not basic type")
+}
+
+func lookupFunArgIdent(env *Environment, ctx *z3.Context, name string) (*z3.AST, error) {
+	if _, ok := env.FunArgRefinementMap[name]; ok {
+		// TODO: support non-int type
+		return ctx.Const(ctx.Symbol(name), ctx.IntSort()), nil
+	}
+	return nil, fmt.Errorf(`failed to convert expr to z3 ast: ident "%s" not found`, name)
 }
 
 func convertBinaryExpr(env *Environment, ctx *z3.Context, expr *ast.BinaryExpr) (*z3.AST, error) {
@@ -92,7 +103,7 @@ func convertUnaryExpr(env *Environment, ctx *z3.Context, expr *ast.UnaryExpr) (*
 	}
 }
 
-func convertBasicLit(env *Environment, ctx *z3.Context, expr *ast.BasicLit) (*z3.AST, error) {
+func convertBasicLit(_ *Environment, ctx *z3.Context, expr *ast.BasicLit) (*z3.AST, error) {
 	switch expr.Kind {
 	case token.INT:
 		if v, err := strconv.Atoi(expr.Value); err == nil {

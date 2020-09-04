@@ -10,7 +10,8 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-type ObjectRefinementMap = map[types.Object]types.Type
+type ObjectRefinementMap map[types.Object]types.Type
+type NameRefinementMap map[string]types.Type
 
 const predicateVariableName = "__val"
 
@@ -22,7 +23,8 @@ type Environment struct {
 	ImplicitRefinementMap ObjectRefinementMap
 
 	// FunArgRefinementMap is used to store refinements of arguments passed to function.
-	FunArgRefinementMap ObjectRefinementMap
+	// Argument labels cannot have a corresponding object, so store type by its name.
+	FunArgRefinementMap NameRefinementMap
 
 	// Scope is current scope to type check
 	Scope *types.Scope
@@ -40,7 +42,7 @@ func NewEnvironment(pass *analysis.Pass) *Environment {
 		//TODO make it private and reject object named __val
 		ExplicitRefinementMap: map[types.Object]types.Type{},
 		ImplicitRefinementMap: map[types.Object]types.Type{},
-		FunArgRefinementMap:   map[types.Object]types.Type{},
+		FunArgRefinementMap:   map[string]types.Type{},
 		Scope:                 nil,
 		Pos:                   token.NoPos,
 		pass:                  pass,
@@ -61,7 +63,22 @@ func (env *Environment) RefinementTypeOf(object types.Object) types.Type {
 
 func (env *Environment) Embedding() ast.Expr {
 	var result []ast.Expr
-	for obj, typ := range env.ExplicitRefinementMap {
+	result = append(result, env.ExplicitRefinementMap.collectExpr(env)...)
+	result = append(result, env.ExplicitRefinementMap.collectExpr(env)...)
+	result = append(result, env.FunArgRefinementMap.collectExpr()...)
+	return joinExpr(token.LAND, result...)
+}
+
+func (m ObjectRefinementMap) collectExpr(env *Environment) []ast.Expr {
+	var result []ast.Expr
+	if m == nil {
+		return result
+	}
+	for obj, typ := range m {
+		if _, o := env.Scope.LookupParent(obj.Name(), env.Pos); o == nil {
+			// not in scope
+			continue
+		}
 		refType, ok := typ.(*refinement.RefinedType)
 		if !ok {
 			continue
@@ -72,6 +89,24 @@ func (env *Environment) Embedding() ast.Expr {
 		replaced := replaceIdentOf(newPredicate, refType.RefVar.Name, ast.NewIdent(obj.Name())).(ast.Expr)
 		result = append(result, replaced)
 	}
+	return result
+}
 
-	return joinExpr(token.LAND, result...)
+func (m NameRefinementMap) collectExpr() []ast.Expr {
+	var result []ast.Expr
+	if m == nil {
+		return result
+	}
+	for name, typ := range m {
+		refType, ok := typ.(*refinement.RefinedType)
+		if !ok {
+			continue
+		}
+
+		// refType.Predicate is expr, so this assertion should be safe
+		newPredicate := astcopy.Expr(refType.Predicate)
+		replaced := replaceIdentOf(newPredicate, refType.RefVar.Name, ast.NewIdent(name)).(ast.Expr)
+		result = append(result, replaced)
+	}
+	return result
 }
