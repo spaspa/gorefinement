@@ -5,12 +5,20 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"reflect"
 	"strconv"
 
-	"github.com/mitchellh/go-z3"
+	"github.com/spaspa/gorefinement/z3Util"
+
+	"github.com/aclements/go-z3/z3"
 )
 
-func ConvertToZ3Ast(env *Environment, ctx *z3.Context, expr ast.Expr) (*z3.AST, error) {
+const (
+	doubleEbits = 11
+	doubleSbits = 53
+)
+
+func convertToZ3Ast(env *Environment, ctx *z3.Context, expr ast.Expr) (z3.Value, error) {
 	switch expr := expr.(type) {
 	case *ast.BinaryExpr:
 		return convertBinaryExpr(env, ctx, expr)
@@ -19,17 +27,17 @@ func ConvertToZ3Ast(env *Environment, ctx *z3.Context, expr ast.Expr) (*z3.AST, 
 	case *ast.Ident:
 		return convertIdent(env, ctx, expr)
 	case *ast.BasicLit:
-		return convertBasicLit(env, ctx, expr)
+		return convertBasicLit(ctx, expr)
 	default:
 		return nil, fmt.Errorf("failed to convert expr to z3 ast: unsupported expr")
 	}
 }
 
-func convertIdent(env *Environment, ctx *z3.Context, expr *ast.Ident) (*z3.AST, error) {
-	if expr.Name == predicateVariableName {
+func convertIdent(env *Environment, ctx *z3.Context, expr *ast.Ident) (z3.Value, error) {
+	if expr.Name == PredicateVariableName {
 		// reserved predicate variable name found
 		// TODO: support non-int type
-		return ctx.Const(ctx.Symbol(predicateVariableName), ctx.IntSort()), nil
+		return ctx.IntConst(PredicateVariableName), nil
 	}
 	_, obj := env.Scope.LookupParent(expr.Name, env.Pos)
 	if obj == nil || obj.Type() == nil {
@@ -37,66 +45,74 @@ func convertIdent(env *Environment, ctx *z3.Context, expr *ast.Ident) (*z3.AST, 
 	}
 	if basicType, ok := obj.Type().(*types.Basic); ok {
 		if basicType.Info()&types.IsInteger != 0 {
-			return ctx.Const(ctx.Symbol(expr.Name), ctx.IntSort()), nil
+			return ctx.IntConst(expr.Name), nil
+		}
+		if basicType.Info()&types.IsFloat != 0 {
+			return ctx.RealConst(expr.Name).ToFloat(ctx.FloatSort(doubleEbits, doubleSbits)), nil
 		}
 	}
 	return nil, fmt.Errorf("failed to convert expr to z3 ast: ident is not basic type")
 }
 
-func convertBinaryExpr(env *Environment, ctx *z3.Context, expr *ast.BinaryExpr) (*z3.AST, error) {
-	lhs, err := ConvertToZ3Ast(env, ctx, expr.X)
+func convertBinaryExpr(env *Environment, ctx *z3.Context, expr *ast.BinaryExpr) (z3.Value, error) {
+	lhsValue, err := convertToZ3Ast(env, ctx, expr.X)
 	if err != nil {
 		return nil, err
 	}
-	rhs, err := ConvertToZ3Ast(env, ctx, expr.Y)
+	rhsValue, err := convertToZ3Ast(env, ctx, expr.Y)
 	if err != nil {
 		return nil, err
 	}
-	switch expr.Op {
-	case token.ADD:
-		return lhs.Add(rhs), nil
-	case token.LAND:
-		return lhs.And(rhs), nil
-	case token.EQL:
-		return lhs.Eq(rhs), nil
-	case token.GTR:
-		return lhs.Gt(rhs), nil
-	case token.GEQ:
-		return lhs.Ge(rhs), nil
-	case token.LEQ:
-		return lhs.Le(rhs), nil
-	case token.LSS:
-		return lhs.Lt(rhs), nil
-	case token.MUL:
-		return lhs.Mul(rhs), nil
-	case token.SUB:
-		return lhs.Sub(rhs), nil
-	case token.XOR:
-		return lhs.Xor(rhs), nil
+
+	if reflect.TypeOf(lhsValue) != reflect.TypeOf(rhsValue) {
+		return nil, fmt.Errorf("failed to convert expr to z3 ast: type mismatch")
+	}
+
+	switch lhsValue := lhsValue.(type) {
+	case z3.Int:
+		return z3Util.ConvertIntBinaryExpr(lhsValue, rhsValue.(z3.Int), expr.Op)
+	case z3.Bool:
+		return z3Util.ConvertBoolBinaryExpr(lhsValue, rhsValue.(z3.Bool), expr.Op)
+	case z3.Float:
+		return z3Util.ConvertFloatBinaryExpr(lhsValue, rhsValue.(z3.Float), expr.Op)
+	case z3.Real:
+		return z3Util.ConvertRealBinaryExpr(lhsValue, rhsValue.(z3.Real), expr.Op)
 	default:
-		return nil, fmt.Errorf("failed to convert expr to z3 ast: unsupported binary op")
+		return nil, fmt.Errorf("failed to convert expr to z3 ast: not a supported type")
 	}
 }
 
-func convertUnaryExpr(env *Environment, ctx *z3.Context, expr *ast.UnaryExpr) (*z3.AST, error) {
-	lhs, err := ConvertToZ3Ast(env, ctx, expr.X)
+func convertUnaryExpr(env *Environment, ctx *z3.Context, expr *ast.UnaryExpr) (z3.Value, error) {
+	lhsValue, err := convertToZ3Ast(env, ctx, expr.X)
 	if err != nil {
 		return nil, err
 	}
-	switch expr.Op {
-	case token.SUB:
-		zero := ctx.Int(0, ctx.IntSort())
-		return zero.Sub(lhs), nil
+
+	switch lhsValue := lhsValue.(type) {
+	case z3.Int:
+		return z3Util.ConvertIntUnaryExpr(lhsValue, expr.Op)
+	case z3.Bool:
+		return z3Util.ConvertBoolUnaryExpr(lhsValue, expr.Op)
+	case z3.Float:
+		return z3Util.ConvertFloatUnaryExpr(lhsValue, expr.Op)
+	case z3.Real:
+		return z3Util.ConvertRealUnaryExpr(lhsValue, expr.Op)
 	default:
-		return nil, fmt.Errorf("failed to convert expr to z3 ast: unsupported unary op")
+		return nil, fmt.Errorf("failed to convert expr to z3 ast: not a supported type")
 	}
 }
 
-func convertBasicLit(env *Environment, ctx *z3.Context, expr *ast.BasicLit) (*z3.AST, error) {
+func convertBasicLit(ctx *z3.Context, expr *ast.BasicLit) (z3.Value, error) {
 	switch expr.Kind {
 	case token.INT:
-		if v, err := strconv.Atoi(expr.Value); err == nil {
-			return ctx.Int(v, ctx.IntSort()), nil
+		if v, err := strconv.ParseInt(expr.Value, 10, 64); err == nil {
+			return ctx.FromInt(v, ctx.IntSort()), nil
+		}
+		return nil, fmt.Errorf("failed to parse int")
+	case token.FLOAT:
+		if v, err := strconv.ParseFloat(expr.Value, 10); err == nil {
+			// IEEE 754 double
+			return ctx.FromFloat64(v, ctx.FloatSort(doubleEbits, doubleSbits)), nil
 		}
 		return nil, fmt.Errorf("failed to parse int")
 	default:
