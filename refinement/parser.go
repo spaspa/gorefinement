@@ -111,11 +111,11 @@ func parseParam(s string, baseVar *types.Var) (*RefinedVar, error) {
 	if nameStr != "" {
 		expr, err := parser.ParseExpr(nameStr)
 		if err != nil {
-			return nil, errors.New("failed to parse param name")
+			return nil, errors.New("failed to parse param Name")
 		}
 		ident, ok := expr.(*ast.Ident)
 		if !ok {
-			return nil, errors.New("failed to parse param name")
+			return nil, errors.New("failed to parse param Name")
 		}
 		resultName = ident.Name
 	}
@@ -128,7 +128,7 @@ func parseParam(s string, baseVar *types.Var) (*RefinedVar, error) {
 	}
 
 	return &RefinedVar{
-		name:        resultName,
+		Name:        resultName,
 		RefinedType: resultType,
 	}, nil
 }

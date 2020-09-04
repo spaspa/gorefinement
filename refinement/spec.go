@@ -85,14 +85,14 @@ func (s *DependentSignature) String() string {
 
 	for i := 0; i < s.ParamRefinements.Len(); i++ {
 		param := s.ParamRefinements.At(i)
-		paramStr = append(paramStr, fmt.Sprintf("%s: %s", param.name, param.RefinedType))
+		paramStr = append(paramStr, fmt.Sprintf("%s: %s", param.Name, param.RefinedType))
 	}
 	for i := 0; i < s.ResultsRefinements.Len(); i++ {
 		result := s.ResultsRefinements.At(i)
-		if result.name == "" {
+		if result.Name == "" {
 			resultStr = append(resultStr, fmt.Sprintf("%s", result.RefinedType))
 		} else {
-			resultStr = append(resultStr, fmt.Sprintf("%s: %s", result.name, result.RefinedType))
+			resultStr = append(resultStr, fmt.Sprintf("%s: %s", result.Name, result.RefinedType))
 		}
 	}
 
@@ -110,7 +110,7 @@ type Refinement struct {
 
 type RefinedVar struct {
 	// TODO
-	name        string
+	Name        string
 	RefinedType *RefinedType
 }
 
