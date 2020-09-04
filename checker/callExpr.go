@@ -2,7 +2,6 @@ package checker
 
 import (
 	"go/ast"
-	"go/types"
 
 	"github.com/spaspa/gorefinement/liquid"
 	"github.com/spaspa/gorefinement/refinement"
@@ -32,7 +31,7 @@ func CheckCallExpr(pass *analysis.Pass, env *liquid.Environment, callExpr *ast.C
 			pass.Reportf(callExpr.Pos(), "UNSAFE")
 		}
 
-		env.FunArgRefinementMap[argVar.Name] = typ
+		env.AddFunArgRefinement(argVar.Name, typ)
 	}
-	env.FunArgRefinementMap = map[string]types.Type{}
+	env.ClearFunArgRefinement()
 }

@@ -13,7 +13,8 @@ import (
 type ObjectRefinementMap map[types.Object]types.Type
 type NameRefinementMap map[string]types.Type
 
-const PredicateVariableName = "__val"
+const predicateVariableName = "__val"
+const argumentVariablePrefix = "__arg_"
 
 type Environment struct {
 	// ExplicitRefinementMap is explicitly defined refinements.
@@ -22,9 +23,9 @@ type Environment struct {
 	// ImplicitRefinementMap is implicitly reasoned refinements, like assignment.
 	ImplicitRefinementMap ObjectRefinementMap
 
-	// FunArgRefinementMap is used to store refinements of arguments passed to function.
+	// funArgRefinementMap is used to store refinements of arguments passed to function.
 	// Argument labels cannot have a corresponding object, so store type by its name.
-	FunArgRefinementMap NameRefinementMap
+	funArgRefinementMap NameRefinementMap
 
 	// Scope is current scope to type check
 	Scope *types.Scope
@@ -42,7 +43,7 @@ func NewEnvironment(pass *analysis.Pass) *Environment {
 		//TODO make it private and reject object named __val
 		ExplicitRefinementMap: map[types.Object]types.Type{},
 		ImplicitRefinementMap: map[types.Object]types.Type{},
-		FunArgRefinementMap:   map[string]types.Type{},
+		funArgRefinementMap:   map[string]types.Type{},
 		Scope:                 nil,
 		Pos:                   token.NoPos,
 		Pass:                  pass,
@@ -61,11 +62,18 @@ func (env *Environment) RefinementTypeOf(object types.Object) types.Type {
 	return nil
 }
 
+func (env *Environment) AddFunArgRefinement(label string, typ types.Type) {
+	env.funArgRefinementMap[argumentVariablePrefix+label] = typ
+}
+func (env *Environment) ClearFunArgRefinement() {
+	env.funArgRefinementMap = map[string]types.Type{}
+}
+
 func (env *Environment) Embedding() ast.Expr {
 	var result []ast.Expr
 	result = append(result, env.ExplicitRefinementMap.collectExpr(env)...)
 	result = append(result, env.ExplicitRefinementMap.collectExpr(env)...)
-	result = append(result, env.FunArgRefinementMap.collectExpr()...)
+	result = append(result, env.funArgRefinementMap.collectExpr()...)
 	return JoinExpr(token.LAND, result...)
 }
 

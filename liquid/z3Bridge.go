@@ -8,6 +8,7 @@ import (
 	"go/types"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/spaspa/gorefinement/z3Util"
 
@@ -15,8 +16,8 @@ import (
 )
 
 const (
-	doubleEbits = 11
-	doubleSbits = 53
+	doubleEBits = 11
+	doubleSBits = 53
 )
 
 func convertToZ3Ast(env *Environment, ctx *z3.Context, expr ast.Expr) (z3.Value, error) {
@@ -35,14 +36,19 @@ func convertToZ3Ast(env *Environment, ctx *z3.Context, expr ast.Expr) (z3.Value,
 }
 
 func convertIdent(env *Environment, ctx *z3.Context, expr *ast.Ident) (z3.Value, error) {
-	if expr.Name == PredicateVariableName {
+	if expr.Name == predicateVariableName {
 		// reserved predicate variable name found
 		// TODO: support non-int type
-		return ctx.IntConst(PredicateVariableName), nil
+		return ctx.IntConst(predicateVariableName), nil
 	}
+
+	if funArgVal := lookupFunArgIdent(env, ctx, expr.Name); funArgVal != nil {
+		return funArgVal, nil
+	}
+
 	_, obj := env.Scope.LookupParent(expr.Name, env.Pos)
 	if obj == nil || obj.Type() == nil {
-		return lookupFunArgIdent(env, ctx, expr.Name)
+		return nil, fmt.Errorf(`failed to convert expr to z3 ast: ident %s not found`, expr.Name)
 	}
 
 	switch obj := obj.(type) {
@@ -58,7 +64,7 @@ func convertIdent(env *Environment, ctx *z3.Context, expr *ast.Ident) (z3.Value,
 			}
 		case constant.Float:
 			if v, err := strconv.ParseFloat(obj.Val().ExactString(), 64); err == nil {
-				return ctx.FromFloat64(v, ctx.FloatSort(doubleEbits, doubleSbits)), nil
+				return ctx.FromFloat64(v, ctx.FloatSort(doubleEBits, doubleSBits)), nil
 			}
 		}
 		return nil, fmt.Errorf(`failed to convert expr to z3 ast: const ident "%s" is not supported type`, expr.Name)
@@ -68,7 +74,7 @@ func convertIdent(env *Environment, ctx *z3.Context, expr *ast.Ident) (z3.Value,
 				return ctx.IntConst(expr.Name), nil
 			}
 			if basicType.Info()&types.IsFloat != 0 {
-				return ctx.RealConst(expr.Name).ToFloat(ctx.FloatSort(doubleEbits, doubleSbits)), nil
+				return ctx.RealConst(expr.Name).ToFloat(ctx.FloatSort(doubleEBits, doubleSBits)), nil
 			}
 			if basicType.Info()&types.IsBoolean != 0 {
 				return ctx.BoolConst(expr.Name), nil
@@ -80,12 +86,16 @@ func convertIdent(env *Environment, ctx *z3.Context, expr *ast.Ident) (z3.Value,
 	}
 }
 
-func lookupFunArgIdent(env *Environment, ctx *z3.Context, name string) (z3.Value, error) {
-	if _, ok := env.FunArgRefinementMap[name]; ok {
-		// TODO: support non-int type
-		return ctx.IntConst(name), nil
+func lookupFunArgIdent(env *Environment, ctx *z3.Context, name string) z3.Value {
+	var prefixed = name
+	if !strings.HasPrefix(name, argumentVariablePrefix) {
+		prefixed = argumentVariablePrefix + name
 	}
-	return nil, fmt.Errorf(`failed to convert expr to z3 ast: ident "%s" not found`, name)
+	if _, ok := env.funArgRefinementMap[prefixed]; ok {
+		// TODO: support non-int type
+		return ctx.IntConst(prefixed)
+	}
+	return nil
 }
 
 func convertBinaryExpr(env *Environment, ctx *z3.Context, expr *ast.BinaryExpr) (z3.Value, error) {
@@ -146,7 +156,7 @@ func convertBasicLit(ctx *z3.Context, expr *ast.BasicLit) (z3.Value, error) {
 	case token.FLOAT:
 		if v, err := strconv.ParseFloat(expr.Value, 10); err == nil {
 			// IEEE 754 double
-			return ctx.FromFloat64(v, ctx.FloatSort(doubleEbits, doubleSbits)), nil
+			return ctx.FromFloat64(v, ctx.FloatSort(doubleEBits, doubleSBits)), nil
 		}
 		return nil, fmt.Errorf("failed to parse int")
 	default:

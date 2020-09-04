@@ -26,11 +26,18 @@ func JoinExpr(sep token.Token, es ...ast.Expr) ast.Expr {
 
 	var result = es[0]
 	for i := 1; i < len(es); i++ {
-		result = &ast.BinaryExpr{
-			X:     result,
-			OpPos: token.NoPos,
-			Op:    sep,
-			Y:     es[i],
+		if es[i] == nil {
+			continue
+		}
+		if result == nil {
+			result = es[i]
+		} else {
+			result = &ast.BinaryExpr{
+				X:     result,
+				OpPos: token.NoPos,
+				Op:    sep,
+				Y:     es[i],
+			}
 		}
 	}
 
@@ -39,5 +46,5 @@ func JoinExpr(sep token.Token, es ...ast.Expr) ast.Expr {
 
 func normalizedPredicateOf(r *refinement.RefinedType) ast.Expr {
 	newPred := astcopy.Expr(r.Predicate)
-	return replaceIdentOf(newPred, r.RefVar.Name, ast.NewIdent(PredicateVariableName)).(ast.Expr)
+	return replaceIdentOf(newPred, r.RefVar.Name, ast.NewIdent(predicateVariableName)).(ast.Expr)
 }
