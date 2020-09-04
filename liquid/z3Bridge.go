@@ -3,6 +3,7 @@ package liquid
 import (
 	"fmt"
 	"go/ast"
+	"go/constant"
 	"go/token"
 	"go/types"
 	"reflect"
@@ -43,15 +44,40 @@ func convertIdent(env *Environment, ctx *z3.Context, expr *ast.Ident) (z3.Value,
 	if obj == nil || obj.Type() == nil {
 		return nil, fmt.Errorf("failed to convert expr to z3 ast: ident not found")
 	}
-	if basicType, ok := obj.Type().(*types.Basic); ok {
-		if basicType.Info()&types.IsInteger != 0 {
-			return ctx.IntConst(expr.Name), nil
+
+	switch obj := obj.(type) {
+	case *types.Const:
+		switch obj.Val().Kind() {
+		case constant.Bool:
+			if v, err := strconv.ParseBool(obj.Val().ExactString()); err == nil {
+				return ctx.FromBool(v), nil
+			}
+		case constant.Int:
+			if v, err := strconv.ParseInt(obj.Val().ExactString(), 10, 64); err == nil {
+				return ctx.FromInt(v, ctx.IntSort()), nil
+			}
+		case constant.Float:
+			if v, err := strconv.ParseFloat(obj.Val().ExactString(), 64); err == nil {
+				return ctx.FromFloat64(v, ctx.FloatSort(doubleEbits, doubleSbits)), nil
+			}
 		}
-		if basicType.Info()&types.IsFloat != 0 {
-			return ctx.RealConst(expr.Name).ToFloat(ctx.FloatSort(doubleEbits, doubleSbits)), nil
+		return nil, fmt.Errorf(`failed to convert expr to z3 ast: const ident "%s" is not supported type`, expr.Name)
+	case *types.Var:
+		if basicType, ok := obj.Type().(*types.Basic); ok {
+			if basicType.Info()&types.IsInteger != 0 {
+				return ctx.IntConst(expr.Name), nil
+			}
+			if basicType.Info()&types.IsFloat != 0 {
+				return ctx.RealConst(expr.Name).ToFloat(ctx.FloatSort(doubleEbits, doubleSbits)), nil
+			}
+			if basicType.Info()&types.IsBoolean != 0 {
+				return ctx.BoolConst(expr.Name), nil
+			}
 		}
+		return nil, fmt.Errorf(`failed to convert expr to z3 ast: var ident "%s" is not supported type`, expr.Name)
+	default:
+		return nil, fmt.Errorf("failed to convert expr to z3 ast: unknown type of ident")
 	}
-	return nil, fmt.Errorf("failed to convert expr to z3 ast: ident is not basic type")
 }
 
 func convertBinaryExpr(env *Environment, ctx *z3.Context, expr *ast.BinaryExpr) (z3.Value, error) {
