@@ -55,17 +55,6 @@ func convertIdent(env *Environment, ctx *z3.Context, expr *ast.Ident) (z3.Value,
 }
 
 func convertBinaryExpr(env *Environment, ctx *z3.Context, expr *ast.BinaryExpr) (z3.Value, error) {
-	lhsType := env.Pass.TypesInfo.TypeOf(expr.X)
-	rhsType := env.Pass.TypesInfo.TypeOf(expr.Y)
-	if !types.Identical(lhsType, rhsType) {
-		return nil, fmt.Errorf("failed to convert expr to z3 ast: type mismatch")
-	}
-	lhsBasicType, _ := lhsType.(*types.Basic)
-
-	if lhsBasicType == nil {
-		return nil, fmt.Errorf("failed to convert expr to z3 ast: not a basic type")
-	}
-
 	lhsValue, err := convertToZ3Ast(env, ctx, expr.X)
 	if err != nil {
 		return nil, err
@@ -94,12 +83,6 @@ func convertBinaryExpr(env *Environment, ctx *z3.Context, expr *ast.BinaryExpr) 
 }
 
 func convertUnaryExpr(env *Environment, ctx *z3.Context, expr *ast.UnaryExpr) (z3.Value, error) {
-	lhsType := env.Pass.TypesInfo.TypeOf(expr)
-	lhsBasicType, _ := lhsType.(*types.Basic)
-	if lhsBasicType == nil {
-		return nil, fmt.Errorf("failed to convert expr to z3 ast: not a basic type")
-	}
-
 	lhsValue, err := convertToZ3Ast(env, ctx, expr.X)
 	if err != nil {
 		return nil, err
