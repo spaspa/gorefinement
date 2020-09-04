@@ -52,7 +52,7 @@ func verify(e *Environment, r1, r2 *refinement.RefinedType) bool {
 	fmt.Println(r1)
 	fmt.Println(r2)
 	fmt.Println()
-	result := query(e, normalizedPredicateOf(r1), normalizedPredicateOf(r2))
+	result := Query(e, normalizedPredicateOf(r1), normalizedPredicateOf(r2))
 	fmt.Println("-----")
 	return result == Valid
 }

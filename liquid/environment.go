@@ -13,7 +13,7 @@ import (
 type ObjectRefinementMap map[types.Object]types.Type
 type NameRefinementMap map[string]types.Type
 
-const predicateVariableName = "__val"
+const PredicateVariableName = "__val"
 
 type Environment struct {
 	// ExplicitRefinementMap is explicitly defined refinements.
@@ -32,8 +32,8 @@ type Environment struct {
 	// Scope is current pos to type check
 	Pos token.Pos
 
-	// analysis pass
-	pass *analysis.Pass
+	// Pass is current analysis pass
+	Pass *analysis.Pass
 }
 
 // NewEnvironment creates new type environment with current analysis pass.
@@ -45,7 +45,7 @@ func NewEnvironment(pass *analysis.Pass) *Environment {
 		FunArgRefinementMap:   map[string]types.Type{},
 		Scope:                 nil,
 		Pos:                   token.NoPos,
-		pass:                  pass,
+		Pass:                  pass,
 	}
 }
 
@@ -66,7 +66,7 @@ func (env *Environment) Embedding() ast.Expr {
 	result = append(result, env.ExplicitRefinementMap.collectExpr(env)...)
 	result = append(result, env.ExplicitRefinementMap.collectExpr(env)...)
 	result = append(result, env.FunArgRefinementMap.collectExpr()...)
-	return joinExpr(token.LAND, result...)
+	return JoinExpr(token.LAND, result...)
 }
 
 func (m ObjectRefinementMap) collectExpr(env *Environment) []ast.Expr {
